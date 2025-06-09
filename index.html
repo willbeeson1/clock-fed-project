@@ -30,29 +30,17 @@
             margin-bottom: 20px;
         }
 
-        h1 {
-            font-size: 28px;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
         .visualization {
             background: #1a1a1a;
             border-radius: 12px;
             padding: 30px;
             margin-bottom: 40px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
-
-        .visualization:last-child {
-            margin-bottom: 20px;
         }
 
         /* Heat Map Styles */
         .heatmap-container {
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .heatmap {
@@ -69,7 +57,6 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            font-size: 14px;
         }
 
         .heatmap-header {
@@ -142,22 +129,11 @@
             padding: 25px;
             border-radius: 8px;
             border: 1px solid #333;
-            transition: all 0.3s ease;
         }
 
         .calc-card h3 {
             margin-top: 0;
             color: #ffffff;
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
-
-        .calc-card label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #b0b0b0;
-            font-weight: 500;
         }
 
         .calc-input {
@@ -167,15 +143,8 @@
             padding: 10px;
             border-radius: 4px;
             width: 100%;
-            margin: 5px 0 15px 0;
-            font-size: 16px;
+            margin: 10px 0;
             box-sizing: border-box;
-        }
-
-        .calc-input:focus {
-            outline: none;
-            border-color: #66bb6a;
-            background: #1f1f1f;
         }
 
         .result {
@@ -196,6 +165,12 @@
             position: relative;
             padding: 20px 0;
             width: 100%;
+            box-sizing: border-box;
+        }
+
+        .timeline-container {
+            position: relative;
+            padding: 0 50px;
         }
 
         .timeline-track {
@@ -204,7 +179,6 @@
             position: relative;
             margin: 40px 0;
             width: 100%;
-            border-radius: 2px;
         }
 
         #timeline-markers {
@@ -229,7 +203,6 @@
             position: relative;
             z-index: 2;
             transition: all 0.3s ease;
-            border: 3px solid #1a1a1a;
         }
 
         .marker-dot:hover {
@@ -256,11 +229,23 @@
             opacity: 0;
             transition: opacity 0.3s ease;
             pointer-events: none;
-            z-index: 10;
         }
 
         .timeline-marker:hover .marker-detail {
             opacity: 1;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
         }
 
         /* Light mode styles */
@@ -269,14 +254,14 @@
             color: #37352f;
         }
 
-        body.light-mode h1,
-        body.light-mode h2 {
-            color: #37352f;
-        }
-
         body.light-mode .visualization {
             background: #f7f7f5;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-mode h1,
+        body.light-mode h2 {
+            color: #37352f;
         }
 
         body.light-mode .heatmap-header {
@@ -294,97 +279,19 @@
             border: 1px solid #e7e7e5;
         }
 
-        body.light-mode .calc-card h3 {
-            color: #37352f;
-        }
-
-        body.light-mode .calc-card label {
-            color: #666;
-        }
-
         body.light-mode .calc-input {
             background: #ffffff;
             border: 1px solid #e7e7e5;
             color: #37352f;
         }
 
-        body.light-mode .calc-input:focus {
-            border-color: #66bb6a;
-            background: #ffffff;
-        }
-
         body.light-mode .timeline-track {
             background: #e7e7e5;
-        }
-
-        body.light-mode .marker-dot {
-            border-color: #f7f7f5;
         }
 
         body.light-mode .marker-detail {
             background: #37352f;
             color: #ffffff;
-        }
-
-        /* Light mode heat map cells */
-        body.light-mode .amount-10 {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        body.light-mode .amount-20 {
-            background: #c8e6c9;
-            color: #2e7d32;
-        }
-
-        body.light-mode .amount-25 {
-            background: #a5d6a7;
-            color: #1b5e20;
-        }
-
-        body.light-mode .amount-30 {
-            background: #81c784;
-            color: #1b5e20;
-        }
-
-        body.light-mode .amount-35 {
-            background: #66bb6a;
-            color: #ffffff;
-        }
-
-        body.light-mode .amount-40 {
-            background: #4caf50;
-            color: #ffffff;
-        }
-
-        body.light-mode .amount-50 {
-            background: #43a047;
-            color: #ffffff;
-        }
-
-        body.light-mode .amount-60 {
-            background: #388e3c;
-            color: #ffffff;
-        }
-
-        body.light-mode .amount-70 {
-            background: #2e7d32;
-            color: #ffffff;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 24px;
-            }
-
-            .visualization {
-                padding: 20px;
-            }
-
-            .calc-card {
-                padding: 20px;
-            }
         }
     </style>
 </head>
@@ -415,9 +322,9 @@
             <div class="calculator">
                 <div class="calc-card">
                     <h3>🗽 New York Analyst</h3>
-                    <label for="nyc-daily">Daily Dinner Stipend ($)</label>
+                    <label>Daily Dinner Stipend ($)</label>
                     <input type="number" class="calc-input" id="nyc-daily" value="35" min="0" max="100">
-                    <label for="nyc-days">Working Days/Year</label>
+                    <label>Working Days/Year</label>
                     <input type="number" class="calc-input" id="nyc-days" value="250" min="0" max="365">
                     <div class="result" id="nyc-result">$8,750</div>
                     <div class="result-detail">Annual meal benefit value</div>
@@ -425,9 +332,9 @@
 
                 <div class="calc-card">
                     <h3>🇬🇧 London Analyst</h3>
-                    <label for="london-daily">Daily Dinner Stipend (£)</label>
+                    <label>Daily Dinner Stipend (£)</label>
                     <input type="number" class="calc-input" id="london-daily" value="25" min="0" max="100">
-                    <label for="london-days">Working Days/Year</label>
+                    <label>Working Days/Year</label>
                     <input type="number" class="calc-input" id="london-days" value="250" min="0" max="365">
                     <div class="result" id="london-result">£6,250 ($7,812)</div>
                     <div class="result-detail">Annual meal benefit value</div>
@@ -457,18 +364,19 @@
         <div class="visualization">
             <h2>The Temporal Control Timeline</h2>
             <div class="timeline">
-                <div class="timeline-track">
+                <div class="timeline-container">
+                    <div class="timeline-track"></div>
                     <div id="timeline-markers"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="tooltip" id="tooltip"></div>
+
     <script>
         // Dark mode detection
         function detectTheme() {
-            const isInNotion = window.location !== window.parent.location;
-
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
                 document.body.classList.add('light-mode');
             }
@@ -592,14 +500,14 @@
                 // Timing
                 const timingCell = document.createElement('div');
                 timingCell.className = 'heatmap-cell';
-                timingCell.style.background = body.classList.contains('light-mode') ? '#e7e7e5' : '#2a2a2a';
+                timingCell.style.background = '#2a2a2a';
                 timingCell.textContent = row.timing;
                 heatmap.appendChild(timingCell);
 
                 // Weekend
                 const weekendCell = document.createElement('div');
                 weekendCell.className = 'heatmap-cell';
-                weekendCell.style.background = body.classList.contains('light-mode') ? '#e7e7e5' : '#2a2a2a';
+                weekendCell.style.background = '#2a2a2a';
                 weekendCell.textContent = row.weekend;
                 heatmap.appendChild(weekendCell);
             });
@@ -611,7 +519,7 @@
 
             if (value === null) {
                 cell.textContent = 'N/A';
-                cell.style.background = body.classList.contains('light-mode') ? '#f0f0ee' : '#1a1a1a';
+                cell.style.background = '#1a1a1a';
                 cell.style.color = '#666';
             } else {
                 cell.textContent = `${currency}${value}`;
@@ -650,9 +558,9 @@
             document.getElementById('london-result').textContent = `£${londonAnnualGBP.toLocaleString()} ($${londonAnnualUSD.toLocaleString()})`;
 
             // Calculate gaps
-            const nominalGap = nycAnnual > 0 ? ((nycAnnual - londonAnnualUSD) / nycAnnual * 100).toFixed(1) : 0;
+            const nominalGap = ((nycAnnual - londonAnnualUSD) / nycAnnual * 100).toFixed(1);
             const pppAdjustedLondon = londonAnnualUSD / pppAdjustment;
-            const pppGap = nycAnnual > 0 ? ((nycAnnual - pppAdjustedLondon) / nycAnnual * 100).toFixed(1) : 0;
+            const pppGap = ((nycAnnual - pppAdjustedLondon) / nycAnnual * 100).toFixed(1);
             const annualDiff = nycAnnual - londonAnnualUSD;
 
             document.getElementById('nominal-gap').textContent = `${nominalGap}%`;
@@ -667,18 +575,16 @@
             { time: '20:00', label: '8:00 PM', detail: 'Standard dinner credit activation', highlight: true },
             { time: '21:00', label: '9:00 PM', detail: 'Transportation benefits begin' },
             { time: '22:00', label: '10:00 PM', detail: 'London transport activation' },
-            { time: '24:00', label: 'Midnight', detail: 'Second meal credit available' },
-            { time: '02:00', label: '2:00 AM', detail: 'Peak sushi delivery hour' },
-            { time: '06:00', label: '6:00 AM', detail: 'Morning transport benefits' }
+            { time: '24:00', label: 'Midnight', detail: 'Second meal credit available' }
         ];
 
         function createTimeline() {
             const container = document.getElementById('timeline-markers');
-            const totalMinutes = 12 * 60; // 6pm to 6am
+            const totalMinutes = 6 * 60; // 6pm to midnight
 
             timelineEvents.forEach(event => {
                 const [hours, minutes] = event.time.split(':').map(Number);
-                const eventMinutes = (hours >= 18 ? hours - 18 : hours + 6) * 60 + minutes;
+                const eventMinutes = (hours - 18) * 60 + minutes;
                 const position = (eventMinutes / totalMinutes) * 100;
 
                 const marker = document.createElement('div');
@@ -695,19 +601,16 @@
             });
         }
 
-        // Initialize everything once DOM is loaded
+        // Initialize everything
         document.addEventListener('DOMContentLoaded', function () {
             detectTheme();
+            populateHeatmap();
+            updateCalculations();
+            createTimeline();
 
-            requestAnimationFrame(() => {
-                populateHeatmap();
-                updateCalculations();
-                createTimeline();
-
-                // Event listeners
-                document.querySelectorAll('.calc-input').forEach(input => {
-                    input.addEventListener('input', updateCalculations);
-                });
+            // Event listeners
+            document.querySelectorAll('.calc-input').forEach(input => {
+                input.addEventListener('input', updateCalculations);
             });
         });
     </script>
