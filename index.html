@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wall Street Meal Stipends Visualizations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1, h2 {
+            color: #ffffff;
+            margin-bottom: 20px;
+        }
+        
+        .visualization {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Heat Map Styles */
+        .heatmap-container {
+            overflow-x: auto;
+        }
+        
+        .heatmap {
+            display: grid;
+            grid-template-columns: 180px repeat(5, 1fr);
+            gap: 2px;
+            min-width: 800px;
+        }
+        
+        .heatmap-cell {
+            padding: 15px;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .heatmap-header {
+            background: #2a2a2a;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .firm-name {
+            text-align: left;
+            font-weight: 500;
+            background: #252525;
+        }
+        
+        /* Dynamic color scales */
+        .amount-10 { background: #1a3a1a; color: #66bb6a; }
+        .amount-20 { background: #2e5a2e; color: #81c784; }
+        .amount-25 { background: #3a6b3a; color: #a5d6a7; }
+        .amount-30 { background: #4a7c4a; color: #c8e6c9; }
+        .amount-35 { background: #5a8d5a; color: #ffffff; }
+        .amount-40 { background: #7cb342; color: #ffffff; }
+        .amount-50 { background: #9ccc65; color: #000000; }
+        .amount-60 { background: #c5e1a5; color: #000000; }
+        .amount-70 { background: #dce775; color: #000000; }
+        
+        /* Calculator Styles */
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .calc-card {
+            background: #252525;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .calc-card h3 {
+            margin-top: 0;
+            color: #ffffff;
+        }
+        
+        .calc-input {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 4px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .result {
+            font-size: 24px;
+            color: #66bb6a;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        
+        .result-detail {
+            font-size: 14px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        /* Timeline Visualization */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-track {
+            height: 4px;
+            background: #333;
+            position: relative;
+            margin: 40px 0;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            transform: translateX(-50%);
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        .marker-dot {
+            width: 20px;
+            height: 20px;
+            background: #66bb6a;
+            border-radius: 50%;
+            margin: 0 auto -12px;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .marker-dot:hover {
+            transform: scale(1.3);
+            background: #81c784;
+        }
+        
+        .marker-label {
+            margin-top: 25px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .marker-detail {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .timeline-marker:hover .marker-detail {
+            opacity: 1;
+        }
+        
+        /* Sankey Diagram Placeholder */
+        .sankey-diagram {
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #1a1a1a;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            color: #666;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wall Street's Gift Economy: Meal Stipend Data Visualizations</h1>
+        
+        <!-- Heat Map Visualization -->
+        <div class="visualization">
+            <h2>1. The Hierarchy Heat Map</h2>
+            <div class="heatmap-container">
+                <div class="heatmap" id="heatmap">
+                    <!-- Headers -->
+                    <div class="heatmap-cell heatmap-header">Firm</div>
+                    <div class="heatmap-cell heatmap-header">NYC Dinner</div>
+                    <div class="heatmap-cell heatmap-header">London Dinner</div>
+                    <div class="heatmap-cell heatmap-header">SF Dinner</div>
+                    <div class="heatmap-cell heatmap-header">Timing Gate</div>
+                    <div class="heatmap-cell heatmap-header">Weekend Bonus</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Geographic Arbitrage Calculator -->
+        <div class="visualization">
+            <h2>2. Geographic Arbitrage Calculator</h2>
+            <div class="calculator">
+                <div class="calc-card">
+                    <h3>🗽 New York Analyst</h3>
+                    <label>Daily Dinner Stipend ($)</label>
+                    <input type="number" class="calc-input" id="nyc-daily" value="35" min="0" max="100">
+                    <label>Working Days/Year</label>
+                    <input type="number" class="calc-input" id="nyc-days" value="250" min="0" max="365">
+                    <div class="result" id="nyc-result">$8,750</div>
+                    <div class="result-detail">Annual meal benefit value</div>
+                </div>
+                
+                <div class="calc-card">
+                    <h3>🇬🇧 London Analyst</h3>
+                    <label>Daily Dinner Stipend (£)</label>
+                    <input type="number" class="calc-input" id="london-daily" value="25" min="0" max="100">
+                    <label>Working Days/Year</label>
+                    <input type="number" class="calc-input" id="london-days" value="250" min="0" max="365">
+                    <div class="result" id="london-result">£6,250 ($7,812)</div>
+                    <div class="result-detail">Annual meal benefit value</div>
+                </div>
+                
+                <div class="calc-card">
+                    <h3>📊 Arbitrage Analysis</h3>
+                    <div style="margin-top: 20px;">
+                        <div style="margin-bottom: 15px;">
+                            <strong>Nominal Gap:</strong>
+                            <span id="nominal-gap" style="color: #ff9800;">11%</span>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <strong>PPP-Adjusted Gap:</strong>
+                            <span id="ppp-gap" style="color: #f44336;">25%</span>
+                        </div>
+                        <div>
+                            <strong>Annual Difference:</strong>
+                            <span id="annual-diff" style="color: #ff5252;">$938</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Temporal Control Timeline -->
+        <div class="visualization">
+            <h2>3. The Temporal Control Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-track"></div>
+                <div id="timeline-markers"></div>
+            </div>
+        </div>
+        
+        <!-- Gift Obligation Flow -->
+        <div class="visualization">
+            <h2>4. The Gift Obligation Cycle</h2>
+            <div class="sankey-diagram">
+                <p>Interactive Sankey diagram showing flow from firm → meal/transport → obligation → overtime</p>
+                <p style="font-size: 12px; margin-top: 10px;">For Notion: Embed from Flourish or create with Mermaid</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        // Heat Map Data
+        const heatmapData = [
+            {
+                firm: 'Centerview Partners',
+                nyc: 60,
+                london: null,
+                sf: 60,
+                timing: 'None',
+                weekend: 'Unlimited'
+            },
+            {
+                firm: 'BMO Capital Markets',
+                nyc: 35,
+                london: null,
+                sf: null,
+                timing: '8pm',
+                weekend: '$70/day'
+            },
+            {
+                firm: 'Morgan Stanley',
+                nyc: 35,
+                london: 25,
+                sf: 35,
+                timing: '8pm',
+                weekend: 'Yes'
+            },
+            {
+                firm: 'Bank of America',
+                nyc: 35,
+                london: 31,
+                sf: 35,
+                timing: '6:30pm',
+                weekend: '$65/day'
+            },
+            {
+                firm: 'Goldman Sachs',
+                nyc: 30,
+                london: 25,
+                sf: 30,
+                timing: '8pm',
+                weekend: 'Yes'
+            },
+            {
+                firm: 'JPMorgan Chase',
+                nyc: 30,
+                london: 25,
+                sf: 30,
+                timing: '8pm',
+                weekend: 'Yes'
+            },
+            {
+                firm: 'UBS',
+                nyc: 30,
+                london: 21,
+                sf: null,
+                timing: '8pm/10pm',
+                weekend: 'Yes'
+            },
+            {
+                firm: 'Barclays',
+                nyc: 30,
+                london: 31,
+                sf: null,
+                timing: '6:30pm*',
+                weekend: 'Limited'
+            },
+            {
+                firm: 'Citi',
+                nyc: 25,
+                london: 25,
+                sf: 25,
+                timing: '7pm',
+                weekend: 'Yes'
+            },
+            {
+                firm: 'Deutsche Bank',
+                nyc: 25,
+                london: 24,
+                sf: null,
+                timing: '8pm',
+                weekend: 'Yes'
+            }
+        ];
+        
+        // Populate Heat Map
+        function populateHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            
+            heatmapData.forEach(row => {
+                // Firm name
+                const firmCell = document.createElement('div');
+                firmCell.className = 'heatmap-cell firm-name';
+                firmCell.textContent = row.firm;
+                heatmap.appendChild(firmCell);
+                
+                // NYC
+                const nycCell = createHeatmapCell(row.nyc, '$');
+                heatmap.appendChild(nycCell);
+                
+                // London (convert to USD for coloring)
+                const londonCell = createHeatmapCell(row.london, '£', 1.25);
+                heatmap.appendChild(londonCell);
+                
+                // SF
+                const sfCell = createHeatmapCell(row.sf, '$');
+                heatmap.appendChild(sfCell);
+                
+                // Timing
+                const timingCell = document.createElement('div');
+                timingCell.className = 'heatmap-cell';
+                timingCell.style.background = '#2a2a2a';
+                timingCell.textContent = row.timing;
+                heatmap.appendChild(timingCell);
+                
+                // Weekend
+                const weekendCell = document.createElement('div');
+                weekendCell.className = 'heatmap-cell';
+                weekendCell.style.background = '#2a2a2a';
+                weekendCell.textContent = row.weekend;
+                heatmap.appendChild(weekendCell);
+            });
+        }
+        
+        function createHeatmapCell(value, currency, conversionRate = 1) {
+            const cell = document.createElement('div');
+            cell.className = 'heatmap-cell';
+            
+            if (value === null) {
+                cell.textContent = 'N/A';
+                cell.style.background = '#1a1a1a';
+                cell.style.color = '#666';
+            } else {
+                cell.textContent = `${currency}${value}`;
+                const usdValue = value * conversionRate;
+                
+                // Color based on USD value
+                if (usdValue >= 60) cell.classList.add('amount-60');
+                else if (usdValue >= 50) cell.classList.add('amount-50');
+                else if (usdValue >= 40) cell.classList.add('amount-40');
+                else if (usdValue >= 35) cell.classList.add('amount-35');
+                else if (usdValue >= 30) cell.classList.add('amount-30');
+                else if (usdValue >= 25) cell.classList.add('amount-25');
+                else if (usdValue >= 20) cell.classList.add('amount-20');
+                else cell.classList.add('amount-10');
+            }
+            
+            return cell;
+        }
+        
+        // Geographic Arbitrage Calculator
+        function updateCalculations() {
+            const nycDaily = parseFloat(document.getElementById('nyc-daily').value) || 0;
+            const nycDays = parseFloat(document.getElementById('nyc-days').value) || 0;
+            const londonDaily = parseFloat(document.getElementById('london-daily').value) || 0;
+            const londonDays = parseFloat(document.getElementById('london-days').value) || 0;
+            
+            const exchangeRate = 1.25;
+            const pppAdjustment = 0.85; // London is ~15% cheaper
+            
+            const nycAnnual = nycDaily * nycDays;
+            const londonAnnualGBP = londonDaily * londonDays;
+            const londonAnnualUSD = londonAnnualGBP * exchangeRate;
+            
+            // Update displays
+            document.getElementById('nyc-result').textContent = `$${nycAnnual.toLocaleString()}`;
+            document.getElementById('london-result').textContent = `£${londonAnnualGBP.toLocaleString()} ($${londonAnnualUSD.toLocaleString()})`;
+            
+            // Calculate gaps
+            const nominalGap = ((nycAnnual - londonAnnualUSD) / nycAnnual * 100).toFixed(1);
+            const pppAdjustedLondon = londonAnnualUSD / pppAdjustment;
+            const pppGap = ((nycAnnual - pppAdjustedLondon) / nycAnnual * 100).toFixed(1);
+            const annualDiff = nycAnnual - londonAnnualUSD;
+            
+            document.getElementById('nominal-gap').textContent = `${nominalGap}%`;
+            document.getElementById('ppp-gap').textContent = `${pppGap}%`;
+            document.getElementById('annual-diff').textContent = `$${annualDiff.toLocaleString()}`;
+        }
+        
+        // Timeline Visualization
+        const timelineEvents = [
+            { time: '18:00', label: '6:00 PM', detail: 'Normal dinner time - no benefits' },
+            { time: '18:30', label: '6:30 PM', detail: 'BofA/Barclays activation (with commitment)' },
+            { time: '20:00', label: '8:00 PM', detail: 'Standard dinner credit activation', highlight: true },
+            { time: '21:00', label: '9:00 PM', detail: 'Transportation benefits begin' },
+            { time: '22:00', label: '10:00 PM', detail: 'London transport activation' },
+            { time: '24:00', label: 'Midnight', detail: 'Second meal credit available' },
+            { time: '02:00', label: '2:00 AM', detail: 'Peak sushi delivery hour' },
+            { time: '06:00', label: '6:00 AM', detail: 'Morning transport benefits' }
+        ];
+        
+        function createTimeline() {
+            const container = document.getElementById('timeline-markers');
+            const totalMinutes = 12 * 60; // 6pm to 6am
+            
+            timelineEvents.forEach(event => {
+                const [hours, minutes] = event.time.split(':').map(Number);
+                const eventMinutes = (hours - 18) * 60 + minutes;
+                const position = (eventMinutes / totalMinutes) * 100;
+                
+                const marker = document.createElement('div');
+                marker.className = 'timeline-marker';
+                marker.style.left = `${position}%`;
+                
+                marker.innerHTML = `
+                    <div class="marker-dot" ${event.highlight ? 'style="background: #ff9800;"' : ''}></div>
+                    <div class="marker-label">${event.label}</div>
+                    <div class="marker-detail">${event.detail}</div>
+                `;
+                
+                container.appendChild(marker);
+            });
+        }
+        
+        // Initialize
+        populateHeatmap();
+        updateCalculations();
+        createTimeline();
+        
+        // Event listeners
+        document.querySelectorAll('.calc-input').forEach(input => {
+            input.addEventListener('input', updateCalculations);
+        });
+    </script>
+</body>
+</html>
