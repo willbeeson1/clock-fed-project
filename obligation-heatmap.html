@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Obligation Heat Map: A Night on the Trading Floor</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .viz-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        #heatmapContainer {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        #heatmap {
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            gap: 2px;
+            margin-top: 40px;
+        }
+        
+        .workstation {
+            aspect-ratio: 1;
+            background: #222;
+            border-radius: 2px;
+            transition: all 0.5s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .workstation:hover {
+            transform: scale(1.2);
+            z-index: 10;
+        }
+        
+        /* Heat levels */
+        .heat-0 { background: #222; }
+        .heat-1 { background: #443322; }
+        .heat-2 { background: #665533; }
+        .heat-3 { background: #ff6b6b; }
+        .heat-4 { background: #ff4757; }
+        .heat-5 { background: #ee5a6f; }
+        .heat-6 { background: #5f27cd; }
+        
+        .timeline {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+        }
+        
+        .timeline-progress {
+            height: 100%;
+            background: #ff6b6b;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .time-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .event-panel {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .event-message {
+            background: #252525;
+            border-left: 3px solid #ff6b6b;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: all 0.5s ease;
+        }
+        
+        .event-message.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .event-time {
+            font-size: 12px;
+            color: #ff6b6b;
+            margin-bottom: 5px;
+        }
+        
+        .event-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #2a2a2a;
+            border-color: #666;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        button.active {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            color: #ff6b6b;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: #999;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.95);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+            border: 1px solid #444;
+            max-width: 200px;
+        }
+        
+        .munn-quote {
+            background: #1a1a1a;
+            border-left: 3px solid #ff6b6b;
+            padding: 20px;
+            margin: 30px 0;
+            font-style: italic;
+            color: #ccc;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+            border-radius: 3px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ff6b6b;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>The Obligation Heat Map: A Night on the Trading Floor</h2>
+        <p class="subtitle">Watch how meal orders create cascading obligations across space and time</p>
+        
+        <div class="controls">
+            <button onclick="startSimulation()" id="startBtn">▶ Start Time Flow</button>
+            <button onclick="pauseSimulation()" id="pauseBtn" disabled>⏸ Pause</button>
+            <button onclick="resetSimulation()">↺ Reset to 6 PM</button>
+        </div>
+        
+        <div class="speed-control">
+            <span>Speed:</span>
+            <input type="range" id="speedSlider" min="1" max="10" value="5">
+            <span id="speedLabel">5x</span>
+        </div>
+        
+        <div class="viz-container">
+            <div id="heatmapContainer">
+                <div class="timeline">
+                    <div class="timeline-progress"></div>
+                    <div class="time-label">6:00 PM</div>
+                </div>
+                <div id="heatmap"></div>
+            </div>
+            
+            <div class="event-panel">
+                <h3 style="margin-top: 0; color: #fff;">What's Happening</h3>
+                <div id="eventLog"></div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="activeCount">0</div>
+                <div class="stat-label">Analysts Still Working</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="mealCount">0</div>
+                <div class="stat-label">Total Meals Ordered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="obligationHours">0h</div>
+                <div class="stat-label">Collective Hours Owed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="deepestSpiral">0</div>
+                <div class="stat-label">Deepest Obligation Level</div>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color heat-0"></div>
+                <span>Empty / Left</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color heat-1"></div>
+                <span>Present (No meal)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color heat-2"></div>
+                <span>Waiting to order</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color heat-3"></div>
+                <span>First meal ordered</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color heat-4"></div>
+                <span>Double meal commitment</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color heat-6"></div>
+                <span>All-nighter spiral</span>
+            </div>
+        </div>
+        
+        <div class="munn-quote">
+            "The temporality of practices is developed from the action of situated agents who are actively creating the relations of particular events at various 'moments', that is, in a given 'present'" — Nancy Munn
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        // Configuration
+        const ROWS = 5;
+        const COLS = 20;
+        const TOTAL_DESKS = ROWS * COLS;
+        const SIMULATION_HOURS = 12; // 6 PM to 6 AM
+        
+        // State
+        let workstations = [];
+        let currentTime = 0; // in minutes from 6 PM
+        let isRunning = false;
+        let animationId;
+        let speed = 5;
+        let eventQueue = [];
+        let stats = {
+            meals: 0,
+            active: 0,
+            totalObligation: 0,
+            maxLevel: 0
+        };
+        
+        // Timeline events with Munn-inspired messages
+        const timelineEvents = [
+            {
+                time: 0,
+                message: "6:00 PM - The trading floor hums with potential energy. Each desk a site of future obligation.",
+                action: () => initializeFloor()
+            },
+            {
+                time: 30,
+                message: "6:30 PM - Early birds begin leaving. Those who stay are entering what Munn calls 'inter-subjective spacetime.'",
+                action: () => earlyDepartures()
+            },
+            {
+                time: 120,
+                message: "8:00 PM - Dinner credits activate! Watch the cascade as individual choices create collective patterns.",
+                action: () => firstMealWindow()
+            },
+            {
+                time: 180,
+                message: "9:00 PM - The gift has been received. Now begins the obligation to repay through presence.",
+                action: () => checkCommitment()
+            },
+            {
+                time: 300,
+                message: "11:00 PM - Second meal window opens. Those who order again deepen their 'spiral of obligation.'",
+                action: () => secondMealWindow()
+            },
+            {
+                time: 480,
+                message: "2:00 AM - Only islands of endurance remain. Each desk glows with accumulated temporal debt.",
+                action: () => lateNightCheck()
+            },
+            {
+                time: 660,
+                message: "5:30 AM - The all-nighter veterans prepare for market open. Their bodies have become the gift.",
+                action: () => preDawnStatus()
+            }
+        ];
+        
+        // Initialize
+        function init() {
+            createHeatmap();
+            resetSimulation();
+            
+            // Speed control
+            const speedSlider = document.getElementById('speedSlider');
+            speedSlider.addEventListener('input', (e) => {
+                speed = parseInt(e.target.value);
+                document.getElementById('speedLabel').textContent = speed + 'x';
+            });
+        }
+        
+        function createHeatmap() {
+            const container = document.getElementById('heatmap');
+            for (let i = 0; i < TOTAL_DESKS; i++) {
+                const desk = document.createElement('div');
+                desk.className = 'workstation heat-0';
+                desk.dataset.id = i;
+                
+                const workstation = {
+                    element: desk,
+                    id: i,
+                    active: false,
+                    heatLevel: 0,
+                    mealTime: null,
+                    meals: 0,
+                    obligationEnd: null,
+                    name: `Analyst ${i + 1}`
+                };
+                
+                desk.addEventListener('mouseenter', (e) => showTooltip(e, workstation));
+                desk.addEventListener('mouseleave', hideTooltip);
+                
+                workstations.push(workstation);
+                container.appendChild(desk);
+            }
+        }
+        
+        function initializeFloor() {
+            // 80% of desks start occupied
+            workstations.forEach(ws => {
+                if (Math.random() < 0.8) {
+                    ws.active = true;
+                    ws.heatLevel = 1;
+                    updateHeat(ws);
+                }
+            });
+            updateStats();
+        }
+        
+        function earlyDepartures() {
+            // 20% of occupied desks leave early
+            const active = workstations.filter(ws => ws.active);
+            const leaving = Math.floor(active.length * 0.2);
+            
+            for (let i = 0; i < leaving; i++) {
+                const ws = active[Math.floor(Math.random() * active.length)];
+                if (ws.active && !ws.mealTime) {
+                    ws.active = false;
+                    ws.heatLevel = 0;
+                    updateHeat(ws);
+                    logEvent(`${ws.name} leaves for the day`);
+                }
+            }
+            updateStats();
+        }
+        
+        function firstMealWindow() {
+            const active = workstations.filter(ws => ws.active && !ws.mealTime);
+            
+            // 70% order dinner
+            active.forEach(ws => {
+                if (Math.random() < 0.7) {
+                    ws.mealTime = currentTime;
+                    ws.meals = 1;
+                    ws.heatLevel = 3;
+                    ws.obligationEnd = currentTime + 240 + Math.random() * 120; // 4-6 hours
+                    updateHeat(ws);
+                    stats.meals++;
+                    
+                    // Add some spatial clustering - neighbors influence each other
+                    influenceNeighbors(ws);
+                }
+            });
+            
+            logEvent("The $35 dinner credits trigger a wave of orders. Each acceptance creates future obligation.");
+            updateStats();
+        }
+        
+        function secondMealWindow() {
+            const eligible = workstations.filter(ws => ws.active && ws.meals === 1);
+            
+            // 50% order second meal
+            eligible.forEach(ws => {
+                if (Math.random() < 0.5) {
+                    ws.meals = 2;
+                    ws.heatLevel = 4;
+                    ws.obligationEnd = currentTime + 240 + Math.random() * 180;
+                    updateHeat(ws);
+                    stats.meals++;
+                    logEvent(`${ws.name} orders again - deepening the spiral`);
+                }
+            });
+            
+            logEvent("Second meals mark commitment to the all-nighter. The gift redoubles.");
+            updateStats();
+        }
+        
+        function influenceNeighbors(ws) {
+            const id = ws.id;
+            const row = Math.floor(id / COLS);
+            const col = id % COLS;
+            
+            // Check adjacent desks
+            [-1, 0, 1].forEach(dr => {
+                [-1, 0, 1].forEach(dc => {
+                    if (dr === 0 && dc === 0) return;
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
+                        const neighborId = newRow * COLS + newCol;
+                        const neighbor = workstations[neighborId];
+                        
+                        // Influence to order if active but haven't ordered
+                        if (neighbor.active && !neighbor.mealTime && Math.random() < 0.3) {
+                            neighbor.heatLevel = 2; // "Thinking about ordering"
+                            updateHeat(neighbor);
+                        }
+                    }
+                });
+            });
+        }
+        
+        function checkCommitment() {
+            workstations.forEach(ws => {
+                if (ws.active && !ws.mealTime && ws.heatLevel < 2) {
+                    // Those who didn't order might leave
+                    if (Math.random() < 0.4) {
+                        ws.active = false;
+                        ws.heatLevel = 0;
+                        updateHeat(ws);
+                    }
+                }
+            });
+            updateStats();
+        }
+        
+        function lateNightCheck() {
+            const survivors = workstations.filter(ws => ws.active && ws.meals >= 1);
+            survivors.forEach(ws => {
+                if (ws.meals === 2) {
+                    ws.heatLevel = 5; // Deep commitment
+                    updateHeat(ws);
+                }
+            });
+            
+            logEvent(`Only ${survivors.length} analysts remain. The floor maps their endurance.`);
+            updateStats();
+        }
+        
+        function preDawnStatus() {
+            const allNighters = workstations.filter(ws => ws.active && ws.meals === 2);
+            allNighters.forEach(ws => {
+                ws.heatLevel = 6; // Purple - maximum obligation
+                updateHeat(ws);
+            });
+            
+            logEvent(`${allNighters.length} analysts complete the full cycle. Tomorrow, it begins again.`);
+            updateStats();
+        }
+        
+        function updateHeat(ws) {
+            ws.element.className = `workstation heat-${ws.heatLevel}`;
+        }
+        
+        function updateTime() {
+            if (!isRunning) return;
+            
+            currentTime += speed;
+            
+            // Check for timeline events
+            const nextEvent = eventQueue.find(e => e.time <= currentTime);
+            if (nextEvent) {
+                nextEvent.action();
+                eventQueue = eventQueue.filter(e => e !== nextEvent);
+            }
+            
+            // Update UI
+            const hours = Math.floor(currentTime / 60);
+            const minutes = currentTime % 60;
+            const displayHour = ((18 + hours) % 24);
+            const ampm = displayHour >= 12 ? 'PM' : 'AM';
+            const hour12 = displayHour > 12 ? displayHour - 12 : (displayHour === 0 ? 12 : displayHour);
+            
+            document.querySelector('.time-label').textContent = 
+                `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            
+            // Update timeline progress
+            const progress = (currentTime / (SIMULATION_HOURS * 60)) * 100;
+            document.querySelector('.timeline-progress').style.width = progress + '%';
+            
+            // Check obligation ends
+            workstations.forEach(ws => {
+                if (ws.obligationEnd && currentTime >= ws.obligationEnd && Math.random() < 0.1) {
+                    ws.active = false;
+                    ws.heatLevel = 0;
+                    updateHeat(ws);
+                    logEvent(`${ws.name} finally leaves after ${ws.meals} meal(s)`);
+                }
+            });
+            
+            updateStats();
+            
+            if (currentTime < SIMULATION_HOURS * 60) {
+                animationId = requestAnimationFrame(() => setTimeout(updateTime, 100));
+            } else {
+                endSimulation();
+            }
+        }
+        
+        function logEvent(message, isMain = false) {
+            const eventLog = document.getElementById('eventLog');
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-message';
+            
+            const time = currentTime;
+            const hours = Math.floor(time / 60);
+            const minutes = time % 60;
+            const displayHour = ((18 + hours) % 24);
+            const ampm = displayHour >= 12 ? 'PM' : 'AM';
+            const hour12 = displayHour > 12 ? displayHour - 12 : (displayHour === 0 ? 12 : displayHour);
+            
+            eventDiv.innerHTML = `
+                <div class="event-time">${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}</div>
+                <div class="event-text">${message}</div>
+            `;
+            
+            // Keep only recent events
+            if (eventLog.children.length > 5) {
+                eventLog.removeChild(eventLog.firstChild);
+            }
+            
+            eventLog.appendChild(eventDiv);
+            setTimeout(() => eventDiv.classList.add('active'), 10);
+        }
+        
+        function updateStats() {
+            const active = workstations.filter(ws => ws.active);
+            const totalObligation = active.reduce((sum, ws) => {
+                if (ws.obligationEnd) {
+                    return sum + Math.max(0, ws.obligationEnd - currentTime) / 60;
+                }
+                return sum;
+            }, 0);
+            
+            stats.active = active.length;
+            stats.totalObligation = totalObligation;
+            stats.maxLevel = Math.max(...workstations.map(ws => ws.heatLevel));
+            
+            document.getElementById('activeCount').textContent = stats.active;
+            document.getElementById('mealCount').textContent = stats.meals;
+            document.getElementById('obligationHours').textContent = 
+                Math.floor(stats.totalObligation) + 'h';
+            document.getElementById('deepestSpiral').textContent = stats.maxLevel;
+        }
+        
+        function showTooltip(e, ws) {
+            const tooltip = document.getElementById('tooltip');
+            let content = `<strong>${ws.name}</strong><br>`;
+            
+            if (!ws.active) {
+                content += 'Empty desk';
+            } else if (ws.meals === 0) {
+                content += 'Present, no meals yet';
+            } else {
+                content += `Meals ordered: ${ws.meals}<br>`;
+                if (ws.obligationEnd) {
+                    const hoursOwed = Math.max(0, (ws.obligationEnd - currentTime) / 60);
+                    content += `Hours owed: ${hoursOwed.toFixed(1)}`;
+                }
+            }
+            
+            tooltip.innerHTML = content;
+            tooltip.style.left = e.pageX + 10 + 'px';
+            tooltip.style.top = e.pageY - 40 + 'px';
+            tooltip.style.opacity = 1;
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+        
+        function startSimulation() {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            
+            // Queue up all events
+            eventQueue = [...timelineEvents];
+            
+            logEvent("The simulation begins. Watch how individual choices create collective patterns.", true);
+            updateTime();
+        }
+        
+        function pauseSimulation() {
+            isRunning = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+        }
+        
+        function endSimulation() {
+            pauseSimulation();
+            logEvent("6:00 AM - The cycle completes. Each heat signature tells a story of obligation.", true);
+        }
+        
+        function resetSimulation() {
+            pauseSimulation();
+            currentTime = 0;
+            stats = { meals: 0, active: 0, totalObligation: 0, maxLevel: 0 };
+            
+            workstations.forEach(ws => {
+                ws.active = false;
+                ws.heatLevel = 0;
+                ws.mealTime = null;
+                ws.meals = 0;
+                ws.obligationEnd = null;
+                updateHeat(ws);
+            });
+            
+            document.querySelector('.timeline-progress').style.width = '0%';
+            document.querySelector('.time-label').textContent = '6:00 PM';
+            document.getElementById('eventLog').innerHTML = '';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            
+            updateStats();
+            logEvent("Reset to 6:00 PM. The floor awaits its transformation.", true);
+        }
+        
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
